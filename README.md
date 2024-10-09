@@ -6,7 +6,7 @@
   
   • Hotel geo location
 
-3. Search interface that returns the list of all hotels to the user:
+2. Search interface that returns the list of all hotels to the user:
 
   • Search parameter: My current geo location
 
