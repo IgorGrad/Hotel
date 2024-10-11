@@ -1,5 +1,6 @@
 package hr.lemax.hotel.service;
 
+import hr.lemax.hotel.common.exception.HotelNotFoundException;
 import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.model.Hotel;
 import lombok.NonNull;
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static hr.lemax.hotel.common.util.GeoUtils.calculateDistance;
 
@@ -34,8 +37,13 @@ public class HotelService implements IHotelService {
      */
     @Override
     public List<Hotel> getAllHotels() {
-        log.trace("getAllHotels() called");
-        return hotels;
+        try {
+            log.info("getAllHotels() called");
+            return hotels;
+        } catch (final Exception e) {
+            log.error("Error while fetching hotels: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -46,11 +54,16 @@ public class HotelService implements IHotelService {
      */
     @Override
     public Optional<Hotel> getHotelById(@NonNull final Long id) {
-        log.trace("getHotelById() called with ID: {}", id);
+        try {
+            log.info("getHotelById() called with ID: {}", id);
 
-        return hotels.stream()
-                .filter(hotel -> hotel.getId().equals(id))
-                .findFirst();
+            return hotels.stream()
+                    .filter(hotel -> hotel.getId().equals(id))
+                    .findFirst();
+        } catch (final Exception e) {
+            log.error("Error while fetching hotel by ID: {}, error: {}", id, e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -61,15 +74,20 @@ public class HotelService implements IHotelService {
      */
     @Override
     public Hotel addHotel(@NonNull final HotelModificationDTO hotelDto) {
-        log.trace("addHotel() called for ID: {} with data: {}", idCounter, hotelDto);
+        try {
+            log.debug("addHotel() called for ID: {} with data: {}", idCounter, hotelDto);
 
-        Hotel hotel = mapper.map(hotelDto, Hotel.class);
-        hotel.setId(idCounter);
+            final Hotel hotel = mapper.map(hotelDto, Hotel.class);
+            hotel.setId(idCounter);
 
-        hotels.add(hotel);
-        // If everything is fine increment id counter
-        idCounter++;
-        return hotel;
+            hotels.add(hotel);
+            // If everything is fine increment id counter
+            idCounter++;
+            return hotel;
+        } catch (final Exception e) {
+            log.error("Error while add new hotel: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -83,16 +101,24 @@ public class HotelService implements IHotelService {
     public Hotel updateHotel(
             @NonNull final HotelModificationDTO updatedHotelDto,
             @NonNull final Long id) {
-        log.trace("updateHotel() called for ID: {} with data: {}", id, updatedHotelDto);
+        try {
+            log.debug("updateHotel() called for ID: {} with data: {}", id, updatedHotelDto);
 
-        // Fetch existing hotel
-        Hotel hotel = getHotelById(id).orElseThrow();
-        log.trace("Existing hotel fetched: {}", hotel);
+            // Fetch existing hotel
+            final Hotel hotel = getHotelById(id).orElseThrow();
+            log.debug("Existing hotel fetched: {}", hotel);
 
-        // Map (update) fields from update DTO to hotel
-        mapper.map(updatedHotelDto, hotel);
+            // Map (update) fields from update DTO to hotel
+            mapper.map(updatedHotelDto, hotel);
 
-        return hotel;
+            return hotel;
+        } catch (final NoSuchElementException e) {
+            log.error("Error while fetching hotel with id: {}, error: {}", id, e.getMessage());
+            throw new HotelNotFoundException(id);
+        } catch (final Exception e) {
+            log.error("Error while update hotel with id: {}, error: {}", id, e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -102,13 +128,20 @@ public class HotelService implements IHotelService {
      */
     @Override
     public void deleteHotel(@NonNull final Long id) {
-        log.trace("delete() called with ID: {}", id);
+        try {
+            log.info("delete() called with ID: {}", id);
 
-        final Hotel hotel = getHotelById(id).orElseThrow();
-        log.trace("Hotel fetched: {}", hotel);
+            final Hotel hotel = getHotelById(id).orElseThrow();
 
-        log.trace("Deleting hotel: {}", hotel);
-        hotels.removeIf(hotelForRemove -> hotelForRemove.getId().equals(id));
+            log.debug("Deleting hotel: {}", hotel);
+            hotels.removeIf(hotelForRemove -> hotelForRemove.getId().equals(id));
+        } catch (final NoSuchElementException e) {
+            log.error("Error while fetching hotel with id: {}, error: {}", id, e.getMessage());
+            throw new HotelNotFoundException(id);
+        } catch (Exception e) {
+            log.error("Error while deleting hotel with ID: {}, error: {}", id, e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -125,15 +158,21 @@ public class HotelService implements IHotelService {
     public List<Hotel> searchHotels(
             @NonNull final Double currentLon,
             @NonNull final Double currentLat) {
+        try {
+            return hotels.stream().peek(
+                    hotel -> {
+                        double distance = calculateDistance(currentLon, currentLat, hotel.getLongitude(), hotel.getLatitude());
+                        double roundedDistance = Math.round(distance * 100.0) / 100.0;
+                        log.debug("Calculating distance for hotel: {}", hotel.getName());
+                        log.debug("Distance: {} -> Rounded distance: {}", distance, roundedDistance);
 
-        return hotels.stream()
-                .sorted(Comparator.<Hotel>comparingDouble(h -> {
-                    final double distance = calculateDistance(currentLon, currentLat, h.getLongitude(), h.getLatitude());
-                    final double roundedDistance = Math.round(distance * 100.0) / 100.0;
-                    h.setDistance(roundedDistance);
-                    return roundedDistance;
-                }).thenComparingDouble(Hotel::getPrice))
-                .toList();
+                        hotel.setDistance(roundedDistance);
+                    }).sorted(Comparator.comparingDouble(Hotel::getDistance)
+                        .thenComparingDouble(Hotel::getPrice)).toList();
+        } catch (Exception e) {
+            log.error("Error while searching hotels: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
 }

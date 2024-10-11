@@ -1,11 +1,14 @@
 package hr.lemax.hotel.common.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static java.lang.Math.atan2;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 
+@Slf4j
 public class GeoUtils {
 
     /**
@@ -23,14 +26,20 @@ public class GeoUtils {
             final double userLat,
             final double hotelLongitude,
             final double hotelLatitude) {
-        final double earthRadius = 6371; // kilometers
-        final double lonDistance = toRadians(hotelLongitude - userLon);
-        final double latDistance = toRadians(hotelLatitude - userLat);
 
-        final double a = sin(latDistance / 2) * sin(latDistance / 2)
-                + cos(toRadians(userLat)) * cos(toRadians(hotelLatitude))
-                * sin(lonDistance / 2) * sin(lonDistance / 2);
-        final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-        return earthRadius * c;
+        try {
+            final double earthRadius = 6371; // kilometers
+            final double lonDistance = toRadians(hotelLongitude - userLon);
+            final double latDistance = toRadians(hotelLatitude - userLat);
+
+            final double a = sin(latDistance / 2) * sin(latDistance / 2)
+                    + cos(toRadians(userLat)) * cos(toRadians(hotelLatitude))
+                    * sin(lonDistance / 2) * sin(lonDistance / 2);
+            final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+            return earthRadius * c;
+        } catch (Exception e) {
+            log.error("Error while calculating distance user: ({}, {}), error: ({}, {})", userLon, userLat, hotelLongitude, hotelLatitude );
+            throw new RuntimeException(e);
+        }
     }
 }
