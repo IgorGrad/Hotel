@@ -128,11 +128,10 @@ public class HotelService implements IHotelService {
 
         return hotels.stream()
                 .sorted(Comparator.<Hotel>comparingDouble(h -> {
-                    double distance = calculateDistance(currentLon, currentLat, h.getLongitude(), h.getLatitude());
+                    final double distance = calculateDistance(currentLon, currentLat, h.getLongitude(), h.getLatitude());
                     h.setDistance(distance);
                     return distance;
-                })
-                        .thenComparingDouble(Hotel::getPrice))
+                }).thenComparingDouble(Hotel::getPrice))
                 .toList();
     }
 
