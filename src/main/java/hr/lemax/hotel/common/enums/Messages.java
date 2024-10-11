@@ -10,7 +10,7 @@ public class Messages {
             public final static String HOTEL_PRICE_POSITIVE = "The hotel price must be positive";
             public final static String HOTEL_LONGITUDE_REQUIRED = "The hotel longitude is required";
             public final static String HOTEL_LATITUDE_REQUIRED = "The hotel latitude is required";
-            public final static String GEOLOCATION_INVALID = "The coordinates are invalid";
+            public final static String HOTEL_GEOLOCATION_INVALID = "The hotel coordinates are invalid";
         }
 
         public static class User {

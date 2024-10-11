@@ -4,10 +4,7 @@ import hr.lemax.hotel.common.enums.Messages;
 import hr.lemax.hotel.common.util.Validator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,12 +26,15 @@ public class UserGeoModificationDTO {
     @Valid
     @Schema(hidden = true)
     public boolean isValid() {
-        if (longitude != null) {
-            if (latitude != null) {
-                if(!Validator.areCoordinatesValid(longitude, latitude)) {
-                    throw new DataIntegrityViolationException(Messages.Error.User.USER_GEOLOCATION_INVALID);
-                }
-            }
+        // Check for non-null longitude and latitude first,
+        // null values catch by NotNull annotation
+        if (longitude == null || latitude == null) {
+            return true;
+        }
+
+        // Validate coordinates
+        if (!Validator.areCoordinatesValid(longitude, latitude)) {
+            throw new DataIntegrityViolationException(Messages.Error.User.USER_GEOLOCATION_INVALID);
         }
 
         return true;

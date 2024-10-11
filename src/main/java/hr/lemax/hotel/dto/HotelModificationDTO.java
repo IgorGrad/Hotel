@@ -38,12 +38,14 @@ public class HotelModificationDTO {
     @Valid
     @Schema(hidden = true)
     public boolean isValid() {
-        if (longitude != null) {
-            if (latitude != null) {
-                if(!Validator.areCoordinatesValid(longitude, latitude)) {
-                    throw new DataIntegrityViolationException(Messages.Error.Hotel.GEOLOCATION_INVALID);
-                }
-            }
+        // Check for non-null longitude and latitude first
+        if (longitude == null || latitude == null) {
+            return true; // Assuming null values are valid
+        }
+
+        // Validate coordinates
+        if (!Validator.areCoordinatesValid(longitude, latitude)) {
+            throw new DataIntegrityViolationException(Messages.Error.Hotel.HOTEL_GEOLOCATION_INVALID);
         }
 
         return true;
