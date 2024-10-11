@@ -1,4 +1,4 @@
-package hr.lemax.hotel;
+package hr.lemax.hotel.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
