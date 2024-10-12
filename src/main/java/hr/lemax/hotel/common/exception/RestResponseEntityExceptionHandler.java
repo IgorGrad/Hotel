@@ -87,6 +87,32 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     }
 
     /**
+     * Handle {@link IllegalArgumentException} which usually indicate that a method has been
+     * passed an illegal or inappropriate argument.
+     *
+     * @param e the Illegal Argument Exception
+     * @param request the current request
+     * @return a response entity with a detailed error message and a 400 Bad Request status
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(
+            final IllegalArgumentException e,
+            final WebRequest request) {
+        log.debug("IllegalArgumentException thrown. Message: {}", e.getMessage());
+        final String responseError = extractResponseError(e.getMessage());
+        final String message = String.format("IllegalArgumentException: %s", responseError);
+        final HttpHeaders headers = new HttpHeaders();
+        final ProblemDetail body = createProblemDetail(
+                e,
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                message,
+                null,
+                null,
+                request);
+        return handleExceptionInternal(e, body, headers, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    /**
      * Handle cases where an incoming HTTP request message is not readable or malformed.
      *
      * @param e the exception indicating that the message is unreadable

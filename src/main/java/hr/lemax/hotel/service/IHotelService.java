@@ -5,6 +5,8 @@ import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.model.Hotel;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,5 +22,14 @@ public interface IHotelService {
 
     void deleteHotel(@NonNull Long id);
 
-    List<Hotel> searchHotels(@NonNull Double currentLon, @NonNull Double currentLat, @NotNull HotelSortStrategy sortStrategy);
+    List<Hotel> searchHotels(
+            @NonNull Double currentLon,
+            @NonNull Double currentLat,
+            @NotNull HotelSortStrategy sortStrategy);
+
+    Page<Hotel> searchHotelsByPage(
+            @NonNull Double currentLon,
+            @NonNull Double currentLat,
+            @NotNull HotelSortStrategy sortStrategy,
+            @NonNull Pageable pageable);
 }

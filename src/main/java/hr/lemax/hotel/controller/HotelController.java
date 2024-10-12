@@ -1,6 +1,5 @@
 package hr.lemax.hotel.controller;
 
-import hr.lemax.hotel.common.exception.HotelNotFoundException;
 import hr.lemax.hotel.common.strategy.SortByDistanceAndPrice;
 import hr.lemax.hotel.dto.HotelDTO;
 import hr.lemax.hotel.dto.HotelModificationDTO;
@@ -17,6 +16,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -151,5 +155,54 @@ public class HotelController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(hotels);
+    }
+
+    @Operation(summary = "Search hotels near user location with pagination")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Hotels successfully fetched"),
+            @ApiResponse(responseCode = "204", description = "No hotel found", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+    })
+    @PostMapping("/search/page")
+    public ResponseEntity<PagedModel<HotelSearchDTO>> searchHotelsByPage(
+            @Valid @RequestBody final UserGeoModificationDTO userGeoDto,
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable)
+    {
+        log.info("Request received: searchHotels() for user with location: ({}, {}), page: {}, size: {}",
+                userGeoDto.getLatitude(), userGeoDto.getLongitude(), pageable.getPageNumber(), pageable.getPageSize());
+
+        // Fetch hotels from service with pagination
+        final Page<Hotel> hotelsPage = hotelService.searchHotelsByPage(
+                userGeoDto.getLongitude(),
+                userGeoDto.getLatitude(),
+                new SortByDistanceAndPrice(),
+               pageable
+        );
+
+        // Map Hotel entities to DTOs
+        final List<HotelSearchDTO> hotelDTOList = hotelsPage
+                .getContent()
+                .stream()
+                .map(entity -> mapper.map(entity, HotelSearchDTO.class))
+                .toList();
+
+        // If no hotels found, return no content
+        if (hotelDTOList.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // Create PageMetadata for PagedModel
+        PagedModel.PageMetadata metadata = new PagedModel.PageMetadata(
+                hotelsPage.getSize(),
+                hotelsPage.getNumber(),
+                hotelsPage.getTotalElements(),
+                hotelsPage.getTotalPages());
+
+        // Wrap the DTOs in a PagedModel without wrapping in EntityModel
+        PagedModel<HotelSearchDTO> pagedModel = PagedModel.of(hotelDTOList, metadata);
+
+        // Return paginated hotels
+        return ResponseEntity.ok(pagedModel);
     }
 }
