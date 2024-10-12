@@ -1,7 +1,9 @@
 package hr.lemax.hotel.service;
 
+import hr.lemax.hotel.common.strategy.HotelSortStrategy;
 import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.model.Hotel;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 
 import java.util.List;
@@ -18,5 +20,5 @@ public interface IHotelService {
 
     void deleteHotel(@NonNull Long id);
 
-    List<Hotel> searchHotels(@NonNull Double currentLon, @NonNull Double currentLat);
+    List<Hotel> searchHotels(@NonNull Double currentLon, @NonNull Double currentLat, @NotNull HotelSortStrategy sortStrategy);
 }

@@ -1,6 +1,7 @@
 package hr.lemax.hotel.controller;
 
 import hr.lemax.hotel.common.exception.HotelNotFoundException;
+import hr.lemax.hotel.common.strategy.SortByDistanceAndPrice;
 import hr.lemax.hotel.dto.HotelDTO;
 import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.dto.HotelSearchDTO;
@@ -142,7 +143,7 @@ public class HotelController {
     public ResponseEntity<List<HotelSearchDTO>> searchHotels(
             @Valid @RequestBody final UserGeoModificationDTO userGeoDto) {
         log.info("Request received: searchHotels() for user with location: ({}, {})", userGeoDto.getLatitude(), userGeoDto.getLongitude());
-        final List<HotelSearchDTO> hotels = hotelService.searchHotels(userGeoDto.getLongitude(), userGeoDto.getLatitude())
+        final List<HotelSearchDTO> hotels = hotelService.searchHotels(userGeoDto.getLongitude(), userGeoDto.getLatitude(), new SortByDistanceAndPrice())
                 .stream()
                 .map(entity -> mapper.map(entity, HotelSearchDTO.class))
                 .toList();

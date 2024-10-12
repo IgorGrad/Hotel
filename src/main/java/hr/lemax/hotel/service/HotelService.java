@@ -1,8 +1,10 @@
 package hr.lemax.hotel.service;
 
 import hr.lemax.hotel.common.exception.HotelNotFoundException;
+import hr.lemax.hotel.common.strategy.HotelSortStrategy;
 import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.model.Hotel;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -157,18 +159,10 @@ public class HotelService implements IHotelService {
     @Override
     public List<Hotel> searchHotels(
             @NonNull final Double currentLon,
-            @NonNull final Double currentLat) {
+            @NonNull final Double currentLat,
+            @NotNull final HotelSortStrategy sortStrategy) {
         try {
-            return hotels.stream().peek(
-                    hotel -> {
-                        double distance = calculateDistance(currentLon, currentLat, hotel.getLongitude(), hotel.getLatitude());
-                        double roundedDistance = Math.round(distance * 100.0) / 100.0;
-                        log.debug("Calculating distance for hotel: {}", hotel.getName());
-                        log.debug("Distance: {} -> Rounded distance: {}", distance, roundedDistance);
-
-                        hotel.setDistance(roundedDistance);
-                    }).sorted(Comparator.comparingDouble(Hotel::getDistance)
-                        .thenComparingDouble(Hotel::getPrice)).toList();
+            return sortStrategy.sort(hotels, currentLon, currentLat);
         } catch (Exception e) {
             log.error("Error while searching hotels: {}", e.getMessage());
             throw new RuntimeException(e);
