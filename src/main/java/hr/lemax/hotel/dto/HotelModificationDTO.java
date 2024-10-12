@@ -1,9 +1,8 @@
 package hr.lemax.hotel.dto;
 
 import hr.lemax.hotel.common.enums.Messages;
-import hr.lemax.hotel.common.util.Validator;
+import hr.lemax.hotel.common.validator.ValidGeolocation;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -11,11 +10,11 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ValidGeolocation(message = Messages.Error.Hotel.HOTEL_GEOLOCATION_INVALID)
 public class HotelModificationDTO {
     @Schema(description = "Hotel Name", example = "Hilton hotel")
     @NotEmpty(message = Messages.Error.Hotel.HOTEL_NAME_REQUIRED)
@@ -34,20 +33,4 @@ public class HotelModificationDTO {
     @Schema(description = "Latitude (Y) Coordinate", example = "-45.123")
     @NotNull(message = Messages.Error.Hotel.HOTEL_LATITUDE_REQUIRED)
     private Double latitude;
-
-    @Valid
-    @Schema(hidden = true)
-    public boolean isValid() {
-        // Check for non-null longitude and latitude first
-        if (longitude == null || latitude == null) {
-            return true; // Assuming null values are valid
-        }
-
-        // Validate coordinates
-        if (!Validator.areCoordinatesValid(longitude, latitude)) {
-            throw new DataIntegrityViolationException(Messages.Error.Hotel.HOTEL_GEOLOCATION_INVALID);
-        }
-
-        return true;
-    }
 }

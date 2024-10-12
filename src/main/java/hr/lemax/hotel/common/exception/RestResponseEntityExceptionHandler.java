@@ -134,7 +134,7 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         log.debug("MethodArgumentNotValidException thrown. Message: {}", e.getMessage());
 
         final List<String> errors = e.getBindingResult()
-                .getFieldErrors()
+                .getAllErrors()
                 .stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .toList();

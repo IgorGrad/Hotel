@@ -154,6 +154,7 @@ public class HotelService implements IHotelService {
      *
      * @param currentLon Longitude of the user's current location (X axis).
      * @param currentLat Latitude of the user's current location (Y axis).
+     * @param sortStrategy Strategy of sorting hotels.
      * @return A sorted list of {@link Hotel} objects, first by distance and then by price.
  */
     @Override
@@ -163,7 +164,7 @@ public class HotelService implements IHotelService {
             @NotNull final HotelSortStrategy sortStrategy) {
         try {
             return sortStrategy.sort(hotels, currentLon, currentLat);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("Error while searching hotels: {}", e.getMessage());
             throw new RuntimeException(e);
         }

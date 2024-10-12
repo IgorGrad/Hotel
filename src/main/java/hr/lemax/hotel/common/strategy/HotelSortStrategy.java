@@ -6,5 +6,4 @@ import java.util.List;
 
 public interface HotelSortStrategy {
     List<Hotel> sort(List<Hotel> hotels, Double currentLon, Double currentLat);
-
 }
