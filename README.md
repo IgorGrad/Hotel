@@ -17,6 +17,8 @@ This application provides:
         - The distance of the hotel from the user’s current location.
     - The results are ordered such that hotels that are cheaper and closer to the user’s location appear at the top, while more expensive and distant hotels appear at the bottom.
 
+3. **Paging** The search interface supports pagination to handle large result sets efficiently.
+
 ---
 
 ## Technology Stack
@@ -101,6 +103,7 @@ This project uses **Swagger** for API documentation and interactive testing. Swa
 
 - **CRUD Operations**: Add, update, and delete hotel information.
 - **Search Interface**: Find hotels based on user location.
+- **Pagination Support**: Handle large datasets with efficient paging of results.
 - **Validation**: Strong validation to ensure data integrity.
 - **Modular Design**: Designed with modularity in mind, allowing for easy integration with persistent storage in the future.
 
