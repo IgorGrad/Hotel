@@ -1,5 +1,6 @@
 package hr.lemax.hotel.common.util;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.Math.atan2;
@@ -22,10 +23,10 @@ public class GeoUtils {
      * @return Distance in kilometers between the user and the hotel
      */
     public static double calculateDistance(
-            final double userLon,
-            final double userLat,
-            final double hotelLongitude,
-            final double hotelLatitude) {
+            @NonNull final Double userLon,
+            @NonNull final Double userLat,
+            @NonNull final Double hotelLongitude,
+            @NonNull final Double hotelLatitude) {
 
         try {
             final double earthRadius = 6371; // kilometers
