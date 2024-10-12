@@ -26,4 +26,12 @@ public class Hotel {
     private double latitude;
 
     private double distance;
+
+    public Hotel(Long id, String name, double price, double longitude, double latitude) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.longitude = longitude;
+        this.latitude = latitude;
+    }
 }
