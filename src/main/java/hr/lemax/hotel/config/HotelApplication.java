@@ -3,8 +3,10 @@ package hr.lemax.hotel.config;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = "hr.lemax.hotel")
+@EnableJpaRepositories(basePackages = "hr.lemax.hotel")
 @EntityScan("hr.lemax.hotel")
 public class HotelApplication {
 

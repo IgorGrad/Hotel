@@ -4,17 +4,24 @@ import hr.lemax.hotel.common.exception.HotelNotFoundException;
 import hr.lemax.hotel.common.strategy.HotelSortStrategy;
 import hr.lemax.hotel.dto.HotelModificationDTO;
 import hr.lemax.hotel.model.Hotel;
+import hr.lemax.hotel.repository.HotelRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -22,14 +29,15 @@ import java.util.Optional;
 @Service
 @Slf4j
 public class HotelService implements IHotelService {
-    private final List<Hotel> hotels;
-    private long idCounter;
+    @PersistenceContext
+    private EntityManager entityManager;
+    private final HotelRepository repository;
     private final ModelMapper mapper;
 
-    public HotelService(final ModelMapper mapper) {
+    public HotelService(final ModelMapper mapper,
+                        final HotelRepository repository) {
         this.mapper = mapper;
-        this.idCounter = 1;
-        this.hotels = new ArrayList<>();
+        this.repository = repository;
     }
 
     /**
@@ -41,7 +49,11 @@ public class HotelService implements IHotelService {
     public List<Hotel> getAllHotels() {
         try {
             log.info("getAllHotels() called");
-            return hotels;
+
+            final Session session = entityManager.unwrap(Session.class);
+            session.enableFilter("softDeleteFilter").setParameter("isDeleted", false);
+
+            return repository.findAll().stream().sorted(Comparator.comparingLong(Hotel::getId)).toList();
         } catch (final Exception e) {
             log.error("Error while fetching hotels: {}", e.getMessage());
             throw new RuntimeException(e);
@@ -59,9 +71,15 @@ public class HotelService implements IHotelService {
         try {
             log.info("getHotelById() called with ID: {}", id);
 
-            return hotels.stream()
-                    .filter(hotel -> hotel.getId().equals(id))
-                    .findFirst();
+            final Session session = entityManager.unwrap(Session.class);
+            session.enableFilter("softDeleteFilter").setParameter("isDeleted", false);
+
+            final Specification<Hotel> spec =
+                    (root, query, criteriaBuilder)
+                            -> criteriaBuilder.equal(root.get(Hotel.FIELD_NAME_ID), id);
+
+            return repository.findOne(spec);
+
         } catch (final Exception e) {
             log.error("Error while fetching hotel by ID: {}, error: {}", id, e.getMessage());
             throw new RuntimeException(e);
@@ -77,14 +95,12 @@ public class HotelService implements IHotelService {
     @Override
     public Hotel addHotel(@NonNull final HotelModificationDTO hotelDto) {
         try {
-            log.debug("addHotel() called for ID: {} with data: {}", idCounter, hotelDto);
+            log.debug("addHotel() called with data: {}", hotelDto);
 
-            final Hotel hotel = mapper.map(hotelDto, Hotel.class);
-            hotel.setId(idCounter);
+            Hotel hotel = mapper.map(hotelDto, Hotel.class);
 
-            hotels.add(hotel);
-            // If everything is fine increment id counter
-            idCounter++;
+            hotel = repository.save(hotel);
+
             return hotel;
         } catch (final Exception e) {
             log.error("Error while add new hotel: {}", e.getMessage());
@@ -107,11 +123,13 @@ public class HotelService implements IHotelService {
             log.debug("updateHotel() called for ID: {} with data: {}", id, updatedHotelDto);
 
             // Fetch existing hotel
-            final Hotel hotel = getHotelById(id).orElseThrow();
+            Hotel hotel = getHotelById(id).orElseThrow();
             log.debug("Existing hotel fetched: {}", hotel);
 
             // Map (update) fields from update DTO to hotel
             mapper.map(updatedHotelDto, hotel);
+
+            hotel = repository.save(hotel);
 
             return hotel;
         } catch (final NoSuchElementException e) {
@@ -129,6 +147,7 @@ public class HotelService implements IHotelService {
      * @param id of hotel to remove
      */
     @Override
+    @Transactional
     public void deleteHotel(@NonNull final Long id) {
         try {
             log.info("delete() called with ID: {}", id);
@@ -136,7 +155,7 @@ public class HotelService implements IHotelService {
             final Hotel hotel = getHotelById(id).orElseThrow();
 
             log.debug("Deleting hotel: {}", hotel);
-            hotels.removeIf(hotelForRemove -> hotelForRemove.getId().equals(id));
+            repository.delete(hotel);
         } catch (final NoSuchElementException e) {
             log.error("Error while fetching hotel with id: {}, error: {}", id, e.getMessage());
             throw new HotelNotFoundException(id);
@@ -163,6 +182,8 @@ public class HotelService implements IHotelService {
             @NonNull final Double currentLat,
             @NotNull final HotelSortStrategy sortStrategy) {
         try {
+            final List<Hotel> hotels = getAllHotels();
+
             return sortStrategy.sort(hotels, currentLon, currentLat);
         } catch (final Exception e) {
             log.error("Error while searching hotels: {}", e.getMessage());
@@ -189,6 +210,7 @@ public class HotelService implements IHotelService {
             @NotNull final HotelSortStrategy sortStrategy,
             @NonNull final Pageable pageable) {
         try {
+            final List<Hotel> hotels = getAllHotels();
             // Sort hotels using the given sorting strategy
             final List<Hotel> sortedHotels = sortStrategy.sort(hotels, currentLon, currentLat);
 
